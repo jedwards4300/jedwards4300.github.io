@@ -1,0 +1,50 @@
+---
+title: "Machine Learning"
+author: "Justin Edwards"
+date: "10/25/2014"
+output: html_document
+---
+##Model
+
+The Machine Learning algorithm I used was a random forest with the number of trees set to 100. I split the training set 30/70 training/validation (since 30% is all my computer could handle :) ). The following is a list variables from the data set that I chose to be features: 
+
+```{r, cache=TRUE, echo=FALSE, results='hide'}
+library(caret)
+library(kernlab)
+
+set.seed(1234)
+trainset <- read.csv("pml-training.csv")
+
+index <- c(160,grep("belt_", colnames(trainset)), grep("arm_", colnames(trainset)), grep("dumbbell_", colnames(trainset)))
+trainsub <- trainset[,index]
+
+
+inTrain <- createDataPartition(y = trainsub$classe, p=0.3, list=FALSE)
+training <- trainsub[inTrain,]
+validation <- trainsub[-inTrain,]
+
+training$classe <- droplevels(training$classe)
+```
+
+`r colnames(trainsub)[2:37]`
+
+##Results
+The following are the results of the training:
+
+```{r, echo=FALSE}
+library(randomForest)
+modelFit <- randomForest(classe ~ .,data=training, p=.1, ntree = 100)
+modelFit
+```
+
+
+This model was then used on the validation set to determine the expected out of sample error:
+
+```{r,echo=FALSE}
+library(caret)
+pred_values <- predict(modelFit, validation)
+valid <- confusionMatrix(pred_values, validation$classe)
+valid
+```
+
+The expected out of sample error rate is **`r 1-valid$overall[[1]]`**
